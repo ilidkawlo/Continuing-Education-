@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>啟動進度每日記錄表</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #7b35b5;
+      --primary-soft: #b98de2;
+      --bg: #f8f8fc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --line: #ececf4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 36px 20px 60px;
+      font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 0% 0%, #f2ebfb 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, #e7f1ff 0%, transparent 35%),
+        var(--bg);
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #5f2497;
+      margin: 8px 0 40px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(165deg, #fff 0%, #fcfbff 100%);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(88, 51, 129, 0.08);
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 22px;
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #d8dbe5;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    .radio-group {
+      display: grid;
+      gap: 6px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      background: #f5f4fa;
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    @media (min-width: 520px) {
+      .radio-group { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    .radio-item input { display: none; }
+
+    .radio-item label {
+      margin: 0;
+      text-align: center;
+      padding: 8px 6px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #575f72;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .radio-item input:checked + label {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(123, 53, 181, 0.25);
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .primary-btn {
+      width: 100%;
+      color: #fff;
+      background: linear-gradient(135deg, #6f2ea9 0%, #a46bda 100%);
+      box-shadow: 0 10px 20px rgba(110, 47, 168, 0.25);
+    }
+
+    .primary-btn:hover { transform: translateY(-1px); }
+
+    .filter-buttons { display: flex; gap: 10px; margin-bottom: 14px; }
+
+    .filter-btn {
+      background: #ecebf5;
+      color: #4a4f5d;
+    }
+
+    .filter-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, #6f2ea9 0%, #a46bda 100%);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ececf4;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #f8f7fc;
+      font-weight: 700;
+      color: #525b6f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 啟動進度每日記錄表</h1>
+
+    <div class="grid">
+      <div class="card">
+        <h2>今日狀態輸入</h2>
+        <form id="logForm">
+          <div class="form-group">
+            <label for="logDate">紀錄日期</label>
+            <input type="date" id="logDate" required />
+          </div>
+          <div id="metricsContainer"></div>
+          <button class="primary-btn" type="submit">儲存今日數據</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>量化趨勢分析</h2>
+        <div class="filter-buttons">
+          <button type="button" class="filter-btn active" data-range="week">週變化</button>
+          <button type="button" class="filter-btn" data-range="month">月變化</button>
+          <button type="button" class="filter-btn" data-range="year">年變化</button>
+        </div>
+        <div style="position: relative; height: 320px; width: 100%;">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 24px; overflow-x: auto;">
+      <h2>歷史數據查找</h2>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>日期</th><th>速度</th><th>強度</th><th>變化</th><th>溫度</th><th>開心</th><th>境界</th><th>續航力</th><th>催功</th><th>總分</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const metrics = ['速度', '強度', '變化', '溫度', '開心', '境界', '續航力', '催功'];
+    const levels = [
+      { score: 1, text: '水下下 25%' },
+      { score: 2, text: '水下 50%' },
+      { score: 3, text: '水上 75%' },
+      { score: 4, text: '水上上 100%' }
+    ];
+
+    document.getElementById('logDate').valueAsDate = new Date();
+
+    const metricsContainer = document.getElementById('metricsContainer');
+    metrics.forEach((metric) => {
+      const group = document.createElement('div');
+      group.className = 'form-group';
+      group.innerHTML = `<label>${metric}</label><div class="radio-group"></div>`;
+      const radioGroup = group.querySelector('.radio-group');
+
+      levels.forEach((lvl) => {
+        radioGroup.innerHTML += `
+          <div class="radio-item">
+            <input type="radio" id="${metric}-${lvl.score}" name="${metric}" value="${lvl.score}" required>
+            <label for="${metric}-${lvl.score}">${lvl.text}</label>
+          </div>`;
+      });
+      metricsContainer.appendChild(group);
+    });
+
+    let db = JSON.parse(localStorage.getItem('progressLogs')) || [];
+    let chart = null;
+
+    function updateTable() {
+      const tbody = document.querySelector('#historyTable tbody');
+      tbody.innerHTML = '';
+      db.forEach((item) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.date}</td>
+            <td>${item.scores['速度']}</td>
+            <td>${item.scores['強度']}</td>
+            <td>${item.scores['變化']}</td>
+            <td>${item.scores['溫度']}</td>
+            <td>${item.scores['開心']}</td>
+            <td>${item.scores['境界']}</td>
+            <td>${item.scores['續航力']}</td>
+            <td>${item.scores['催功']}</td>
+            <td style="font-weight:700; color:var(--primary);">${item.total}</td>
+          </tr>`;
+      });
+    }
+
+    function updateChart(range, clickedButton) {
+      document.querySelectorAll('.filter-btn').forEach((btn) => btn.classList.remove('active'));
+      if (clickedButton) clickedButton.classList.add('active');
+
+      let filteredData = [...db].sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (range === 'week') filteredData = filteredData.slice(-7);
+      if (range === 'month') filteredData = filteredData.slice(-30);
+      if (range === 'year') filteredData = filteredData.slice(-365);
+
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+          labels: filteredData.map((d) => d.date),
+          datasets: [{
+            label: '每日綜合總分 (滿分32分)',
+            data: filteredData.map((d) => d.total),
+            borderColor: '#6B21A8',
+            backgroundColor: 'rgba(107, 33, 168, 0.12)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { min: 8, max: 32 } }
+        }
+      });
+    }
+
+    document.getElementById('logForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = document.getElementById('logDate').value;
+      const log = { date, scores: {}, total: 0 };
+
+      metrics.forEach((metric) => {
+        const selected = document.querySelector(`input[name="${metric}"]:checked`);
+        const value = Number(selected.value);
+        log.scores[metric] = value;
+        log.total += value;
+      });
+
+      db = db.filter((item) => item.date !== date);
+      db.push(log);
+      db.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      localStorage.setItem('progressLogs', JSON.stringify(db));
+      alert('數據儲存成功！');
+      updateTable();
+
+      const active = document.querySelector('.filter-btn.active') || document.querySelector('.filter-btn');
+      updateChart(active.dataset.range, active);
+    });
+
+    document.querySelectorAll('.filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => updateChart(btn.dataset.range, btn));
+    });
+
+    updateTable();
+    const firstBtn = document.querySelector('.filter-btn');
+    updateChart(firstBtn.dataset.range, firstBtn);
+  </script>
+</body>
+</html>
