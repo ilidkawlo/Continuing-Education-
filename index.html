@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>法影教材查找平台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>法影教材查找平台</h1>
+      <p>像 Netflix + Notion + YouTube Library 的極簡教材搜尋體驗</p>
+    </header>
+
+    <main class="layout">
+      <section class="main-content">
+        <div class="search-panel card">
+          <input id="searchName" type="text" placeholder="搜尋法影名稱..." />
+          <input id="searchKeyword" type="text" placeholder="關鍵字搜尋..." />
+          <select id="durationFilter">
+            <option value="all">全部長度</option>
+            <option value="short">短片（10分鐘內）</option>
+            <option value="medium">中等（10-30分鐘）</option>
+            <option value="long">長片（30分鐘以上）</option>
+          </select>
+          <select id="sortFilter">
+            <option value="usage">依使用次數排序</option>
+            <option value="favorites">依收藏數排序</option>
+            <option value="recent">依最近使用排序</option>
+          </select>
+        </div>
+
+        <section>
+          <h2>法影列表</h2>
+          <div id="cards" class="grid"></div>
+        </section>
+      </section>
+
+      <aside class="sidebar card">
+        <h2>熱門排行榜</h2>
+        <p>最常使用法影（依使用次數）</p>
+        <div id="ranking"></div>
+      </aside>
+    </main>
+
+    <section id="detail" class="detail card hidden"></section>
+
+    <script src="app.js"></script>
+  </body>
+</html>
